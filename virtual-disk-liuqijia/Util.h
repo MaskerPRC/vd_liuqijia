@@ -5,6 +5,7 @@
 #include <fstream>
 #include <assert.h>
 #include <stdint.h>
+#include <vector>
 
 #if defined(DEBUG) || defined(_DEBUG)
 #define DEBUG
@@ -159,3 +160,5 @@ void SaveStringToFile(std::ofstream & _ofs, const std::basic_string<_charType> &
 }
 
 bool IsMatch(Comment(without * and ? ) const std::string & _str1, Comment(with * and ? ) const std::string & _str2);
+
+std::vector<std::string> SplitCmdLine(std::string _cmdLine);

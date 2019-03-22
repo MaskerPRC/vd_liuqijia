@@ -20,16 +20,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandTool.h" />
+    <ClInclude Include="ErrorConstant.h" />
     <ClInclude Include="File.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VirtualDisk.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommandTool.cpp" />
+    <ClCompile Include="ErrorConstant.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="VirtualDisk.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ErrorCode.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

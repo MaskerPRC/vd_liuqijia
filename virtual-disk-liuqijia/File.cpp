@@ -1,4 +1,6 @@
 #include "File.h"
+#include "VirtualDisk.h"
+#include <algorithm>
 
 FPath::FPath(const std::string & _path)
 {
@@ -15,14 +17,19 @@ FPath::FPath(const std::string & _path)
 	for (auto begin = it; it != _path.end(); NULL)
 	{
 		for (NULL; it != _path.end() && (*it == L'/' || *it == '\\'); ++it);
-		if(it == _path.end()) break;
+		if (it == _path.end()) break;
 
 		begin = it;
 
 		for (NULL; it != _path.end() && *it != L'/' && *it != '\\'; ++it);
 		mPath.push_back(std::string(begin, it));
 	}
-	Assert(mPath.size() != 0);
+
+	mContainsWildcards = std::find_if(_path.begin(), _path.end(), [](char _char) {return _char == '?' || _char == '*'; }) != _path.end();
+
+	if (mPath.size() == 0)
+		mPath.push_back(".");
+
 }
 
 std::string FPath::ToString() const
@@ -46,4 +53,38 @@ std::string FPath::ToString() const
 		returned += '\\';
 
 	return std::move(returned);
+}
+
+bool FDirectory::AddSubFile(FFile * _file)
+{
+	auto it = std::find_if(mSubFiles.begin(), mSubFiles.end(), [&](FFile * _val) {return _val->GetFileName() == _file->GetFileName(); });
+	if (it != mSubFiles.end()) return false;
+
+	mSubFiles.push_back(_file);
+	return true;
+}
+
+bool FDirectory::EraseSubFile(const std::string & _fileName)
+{
+	auto it = std::find_if(mSubFiles.begin(), mSubFiles.end(), [&](FFile * _file) {return _file->GetFileName() == _fileName; });
+
+	if (it == mSubFiles.end()) return false;
+	mSubFiles.erase(it);
+
+	return true;
+}
+
+FSymbolLink::FSymbolLink(FVirtualDisk * _virtualDisk, FDirectory * _parentDirectory, const std::string & _fileName, const FFile * _linkedPath)
+	:FFile(_virtualDisk, _parentDirectory, _fileName), mLinkedPath(_virtualDisk->GetFilePath(_linkedPath))
+{
+}
+
+bool FSymbolLink::ResetLinkedPath(const FPath & _path)
+{
+	if (mVirtualDisk->ContainNode(_path, nullptr, nullptr))
+	{
+		mLinkedPath = _path;
+		return true;
+	}
+	return false;
 }

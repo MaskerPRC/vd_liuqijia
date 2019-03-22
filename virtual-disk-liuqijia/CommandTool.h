@@ -4,6 +4,7 @@
 #include <vector>
 #include "File.h"
 #include "VirtualDisk.h"
+#include "ErrorConstant.h"
 
 class FCommandTool
 {
@@ -12,7 +13,7 @@ class FCommandTool
 public:
 	static FCommandTool & Get()
 	{
-		FCommandTool single;
+		static FCommandTool single;
 		return single;
 	}
 
@@ -22,7 +23,7 @@ public:
 	void Exec(const std::string & _cmdLine);
 
 private:
-#define RegisterFunc(ProcessFunc) void ProcessFunc(const std::vector<std::string> & _params)
+#define RegisterFunc(ProcessFunc) uint64_t ProcessFunc(const std::vector<std::string> & _params)
 	RegisterFunc(Dir);
 	RegisterFunc(Md);
 	RegisterFunc(Cd);
@@ -37,8 +38,10 @@ private:
 	RegisterFunc(Load);
 #undef RegisterFunc
 
+	void ErrorProcess(uint64_t _errorCode, const std::vector<std::string> & _cmdLines);
+
 private:
 	FVirtualDisk * mVirtualDisk;
 	FDirectory * mCurrentDirectory;
-	std::map<std::string, void(FCommandTool::*)(const std::vector<std::string> &)> mFuncMap;
+	std::map<std::string, uint64_t(FCommandTool::*)(const std::vector<std::string> &)> mFuncMap;
 };
