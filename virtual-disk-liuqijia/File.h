@@ -44,7 +44,7 @@ public:
 	}
 
 
-	std::string ToString()const;
+	std::string ToString(bool _couldWithAt = true) const;
 	const std::vector<std::string> & GetPath()const { return mPath; }
 	bool IsContainsWildcards()const { return mContainsWildcards; }
 	bool IsAbsolutePath()const { return mPath.front() == "C:"; }
@@ -229,6 +229,7 @@ public:
 
 	const FPath & GetLinkedPath()const { return mLinkedPath; };
 	bool ResetLinkedPath(const FPath & _path);
+	uint64_t GetFileSize()const override { return 0; }
 
 private:
 	FPath mLinkedPath;

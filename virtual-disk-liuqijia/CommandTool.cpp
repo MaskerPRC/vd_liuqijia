@@ -18,6 +18,8 @@ void FCommandTool::Init(FVirtualDisk * _virtualDisk)
 		{"cls", &FCommandTool::Cls},
 		{"save", &FCommandTool::Save},
 		{"load", &FCommandTool::Load},
+		{"cd.", &FCommandTool::Cd},
+		{"cd..", &FCommandTool::Cd},
 	};
 
 	for (const auto & _ele : map)
@@ -110,7 +112,12 @@ uint64_t FCommandTool::Cd(const std::vector<std::string> & _params)
 
 	if (_params.size() == 1)
 	{
-		printf_s(mVirtualDisk->GetFilePath(mCurrentDirectory).ToString().c_str());
+		if (_params[0] == "cd.")
+			return mVirtualDisk->Cd(mCurrentDirectory, FPath("."));
+		else if (_params[0] == "cd..")
+			return mVirtualDisk->Cd(mCurrentDirectory, FPath(".."));
+		else
+			printf_s(mVirtualDisk->GetFilePath(mCurrentDirectory).ToString().c_str());
 	}
 	else
 	{

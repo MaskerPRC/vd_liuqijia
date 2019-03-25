@@ -3,16 +3,16 @@
 #include <type_traits>
 
 template<typename _t>
-struct TIsConstFDirectory {};
+struct TIsConstPointer {};
+
+template<typename _t>
+struct TIsConstPointer<const _t *> : std::true_type {};
+
+template<typename _t>
+struct TIsConstPointer<_t *> : std::false_type {};
 
 template<>
-struct TIsConstFDirectory<const FDirectory *> : std::true_type {};
-
-template<>
-struct TIsConstFDirectory<FDirectory *> : std::false_type {};
-
-template<>
-struct TIsConstFDirectory<std::nullptr_t> : std::false_type {};
+struct TIsConstPointer<std::nullptr_t> : std::false_type {};
 
 template<bool _val, typename _t1, typename _t2>
 struct TSwitchType {};
@@ -29,15 +29,19 @@ class FVirtualDisk
 {
 	FVirtualDisk() = default;
 	void __ClearHelper(FDirectory * _node);
-	void __DirHelper(const FDirectory * _node, bool _s, bool _ad, std::vector<std::string> & __outFileNames);
+	void __DirHelper(const FDirectory * _node, bool _s, bool _ad, std::vector<std::string> & _outFileNames, bool _withWildcard, __in_opt const std::string * _wildcard);
 
 	template<typename _directoryRefType>
-	std::vector<typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FFile*, FFile*>::type>
+	std::vector<typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FFile*, FFile*>::type>
 		GetFile(_In_opt_ _directoryRefType _directory, const FPath & _path);
 
 	template<typename _directoryRefType>
-	typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FDirectory *, FDirectory *>::type
+	typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FDirectory *, FDirectory *>::type
 		GetFileParentDirectory(_In_opt_ _directoryRefType _directory, const FPath & _path);
+
+	template<typename _symbolLinkRefType>
+	typename TSwitchType<TIsConstPointer<_symbolLinkRefType>::value, const FFile *, FFile *>::type
+		GetFinalLinkedFile(_symbolLinkRefType _symbolLink);
 
 public:
 	static FVirtualDisk& Get()
@@ -75,11 +79,11 @@ private:
 };
 
 template<typename _directoryRefType>
-std::vector<typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FFile*, FFile*>::type>
+std::vector<typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FFile*, FFile*>::type>
 FVirtualDisk::GetFile(_In_opt_ _directoryRefType _directory, const FPath & _path)
 {
-	using FileRefType = typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FFile*, FFile*>::type;
-	using DirectoryRefType = typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FDirectory*, FDirectory*>::type;
+	using FileRefType = typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FFile*, FFile*>::type;
+	using DirectoryRefType = typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FDirectory*, FDirectory*>::type;
 
 	DirectoryRefType nowDirectory = GetFileParentDirectory(_directory, _path);
 
@@ -89,10 +93,12 @@ FVirtualDisk::GetFile(_In_opt_ _directoryRefType _directory, const FPath & _path
 }
 
 template<typename _directoryRefType>
-typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FDirectory*, FDirectory*>::type FVirtualDisk::GetFileParentDirectory(_directoryRefType _directory, const FPath & _path)
+typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FDirectory*, FDirectory*>::type
+FVirtualDisk::GetFileParentDirectory(_directoryRefType _directory, const FPath & _path)
 {
-	using FileRefType = typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FFile*, FFile*>::type;
-	using DirectoryRefType = typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FDirectory*, FDirectory*>::type;
+	using FileRefType = typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FFile*, FFile*>::type;
+	using DirectoryRefType = typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FDirectory*, FDirectory*>::type;
+	using SymbolLinkRefType = typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FSymbolLink*, FSymbolLink*>::type;
 
 	DirectoryRefType nowDirectory = _directory;
 
@@ -107,11 +113,44 @@ typename TSwitchType<TIsConstFDirectory<_directoryRefType>::value, const FDirect
 		if (files.size() == 0)
 			return nullptr;
 
-		auto it = std::find_if(files.begin(), files.end(), [](FileRefType _file) {return _file->GetFileType() == EFileType::Directory; });
+		auto it = std::find_if(files.begin(), files.end(), [](FileRefType _file) {return _file->GetFileType() == EFileType::Directory || _file->GetFileType() == EFileType::SymbolLink; });
 		if (it == files.end()) return nullptr;
 
-		nowDirectory = dynamic_cast<DirectoryRefType>(*it);
+		if ((*it)->GetFileType() == EFileType::SymbolLink)
+		{
+			auto files = GetFile(nullptr, dynamic_cast<SymbolLinkRefType>(*it)->GetLinkedPath());
+			if (files.size() == 0)
+				return nullptr;
+			else if (files[0]->GetFileType() == EFileType::SymbolLink)
+			{
+				auto linkedFiles = GetFile(nullptr, dynamic_cast<SymbolLinkRefType>(files[0])->GetLinkedPath());
+				if (linkedFiles.size() == 0 || linkedFiles[0]->GetFileType() != EFileType::Directory)
+					return nullptr;
+				nowDirectory = dynamic_cast<DirectoryRefType>(files[0]);
+			}
+		}
+		else nowDirectory = dynamic_cast<DirectoryRefType>(*it);
 	}
 
 	return nowDirectory;
+}
+
+template<typename _symbolLinkRefType>
+typename TSwitchType<TIsConstPointer<_symbolLinkRefType>::value, const FFile*, FFile*>::type
+FVirtualDisk::GetFinalLinkedFile(_symbolLinkRefType _symbolLink)
+{
+	using FileRefType = typename TSwitchType<TIsConstPointer<_symbolLinkRefType>::value, const FFile*, FFile*>::type;
+	using DirectoryRefType = typename TSwitchType<TIsConstPointer<_symbolLinkRefType>::value, const FDirectory*, FDirectory*>::type;
+	using SymbolLinkRefType = typename TSwitchType<TIsConstPointer<_symbolLinkRefType>::value, const FSymbolLink*, FSymbolLink*>::type;
+
+	if (_symbolLink == nullptr) return nullptr;
+
+	auto files = GetFile(nullptr, dynamic_cast<FSymbolLink*>(_symbolLink)->GetLinkedPath());
+
+	FileRefType file = files.size() != 0 ? files[0] : nullptr;
+	
+	if (file && file->GetFileType() == EFileType::SymbolLink)
+		file = GetFinalLinkedFile(dynamic_cast<SymbolLinkRefType>(file));
+
+	return file;
 }

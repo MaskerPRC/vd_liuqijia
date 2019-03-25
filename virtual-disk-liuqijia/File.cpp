@@ -29,10 +29,9 @@ FPath::FPath(const std::string & _path)
 
 	if (mPath.size() == 0)
 		mPath.push_back(".");
-
 }
 
-std::string FPath::ToString() const
+std::string FPath::ToString(bool _couldWithAt) const
 {
 	std::string returned;
 	uint64_t len = 0;
@@ -41,7 +40,7 @@ std::string FPath::ToString() const
 	len += !mIsInVirtualDisk - !mIsEndWithSprit;
 	returned.reserve(len);
 
-	if (!mIsInVirtualDisk)
+	if (_couldWithAt && !mIsInVirtualDisk)
 		returned += '@';
 	for (uint64_t i = 0; i != mPath.size() - 1; ++i)
 	{

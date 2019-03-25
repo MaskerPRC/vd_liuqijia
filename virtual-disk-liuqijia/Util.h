@@ -162,3 +162,28 @@ void SaveStringToFile(std::ofstream & _ofs, const std::basic_string<_charType> &
 bool IsMatch(Comment(without * and ? ) const std::string & _str1, Comment(with * and ? ) const std::string & _str2);
 
 std::vector<std::string> SplitCmdLine(std::string _cmdLine);
+
+template<typename _elementType, typename _iteratorType, typename _prFuncType, typename _processFuncType>
+uint64_t CopyIf(std::vector<_elementType> & _vector, _iteratorType _begin, _iteratorType _end, _prFuncType _prFunc, _processFuncType _processFunc = [](const _elementType & _value) {return _value})
+{
+	uint64_t count = 0;
+	for (_iteratorType it = _begin; it != _end; ++it)
+	{
+		if (_prFunc(*it))
+		{
+
+			_vector.push_back(_processFunc(*it));
+			++count;
+		}
+	}
+	return count;
+}
+
+template< typename _drivedClass, typename _baseClass>
+_drivedClass * Cast(_baseClass * _pointer)
+{
+	static_assert(std::is_base_of_v<_baseClass, _drivedClass>, "Inheritance relationship is incorrect");
+	const uint64_t offset = (uint64_t)static_cast<_baseClass*>((_drivedClass*)(8)) - 8;
+
+	return reinterpret_cast<_drivedClass *>((uint64_t)(_pointer) - offset);
+}
