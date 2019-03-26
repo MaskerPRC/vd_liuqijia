@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<MklinkTest>
+    <MklinkCommand string="mklink bss baf">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </MklinkCommand>
+	<MklinkCommand string="mklink sym baa">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </MklinkCommand>
+	<MklinkCommand string="mklink bss C:\baa">
+        <PreNodes>
+			<Node path="C:\baa"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\bss"/>
+        </PostNodes>
+    </MklinkCommand>
+	<MklinkCommand string="mklink C:\1sy.txt baa\1.txt">
+        <PreNodes>
+			<Node path="C:\baa\1.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\1sy.txt"/>
+        </PostNodes>
+    </MklinkCommand>
+</MklinkTest>

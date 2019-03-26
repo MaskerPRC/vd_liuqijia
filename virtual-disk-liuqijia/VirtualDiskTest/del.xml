@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<DelTest>
+	<DelCommand string="del 2.txt /y">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+    <DelCommand string="del 1*">
+        <PreNodes>
+            <Node path="C:\1.txt"/>
+			<Node path="C:\11.txt"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+	<DelCommand string="del baa">
+        <PreNodes>
+            <Node path="C:\baa\1.txt"/>
+			<Node path="C:\baa\11.txt"/>
+			<Node path="C:\baa\2.txt"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+	<DelCommand string="del sym1">
+        <PreNodes>
+            <Node path="C:\b in\1.txt"/>
+			<Node path="C:\b in\11.txt"/>
+			<Node path="C:\b in\2.txt"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+	<DelCommand string="del s.txt y.txt">
+        <PreNodes>
+            <Node path="C:\s.txt"/>
+			<Node path="C:\y.txt"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+	<DelCommand string="del sfs">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+	<DelCommand string="del . /s">
+        <PreNodes>
+			<Node path="C:\2.txt"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </DelCommand>
+</DelTest>

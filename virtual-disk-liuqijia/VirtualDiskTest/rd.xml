@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<RdTest>
+    <RdCommand string="rd baa">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+	<RdCommand string='rd "b in"\st'>
+        <PreNodes>
+			<Node path="C:\b in\st"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+	<RdCommand string='rd "b in" /s'>
+        <PreNodes>
+			<Node path="C:\b in\1.txt"/>
+			<Node path="C:\b in\11.txt"/>
+			<Node path="C:\b in\2.txt"/>
+			<Node path="C:\b in"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+	<RdCommand string="rd sf">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+	<RdCommand string="rd sym">
+        <PreNodes>
+			<Node path="C:\sym"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+	<RdCommand string="rd C:">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RdCommand>
+</RdTest>

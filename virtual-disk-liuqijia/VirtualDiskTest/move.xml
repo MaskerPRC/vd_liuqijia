@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<MoveTest>
+    <MoveCommand string="move h.txt baa">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </MoveCommand>
+	<MoveCommand string="move 1.txt baa /s">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </MoveCommand>
+	<MoveCommand string="move 1.txt baa /n">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </MoveCommand>
+	<MoveCommand string="move 1* baa /y">
+        <PreNodes>
+			<Node path="C:\1.txt"/>
+			<Node path="C:\11.txt"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\baa\1.txt"/>
+			<Node path="C:\baa\11.txt"/>
+        </PostNodes>
+    </MoveCommand>
+	<MoveCommand string='move y.txt C:\sym1\st'>
+        <PreNodes>
+			<Node path="C:\y.txt"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\b in\st\y.txt"/>
+        </PostNodes>
+    </MoveCommand>
+	<MoveCommand string='move baa C:\"b in"'>
+        <PreNodes>
+			<Node path="C:\baa"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\b in\baa"/>
+        </PostNodes>
+    </MoveCommand>
+</MoveTest>

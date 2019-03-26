@@ -17,6 +17,7 @@ RegisterErrorCode(E_WRONG_FILE_NAME_ERROR, 15, "Wrong file name")
 RegisterErrorCode(E_ACCESS_FAILURE_ERROR, 16, "Access failure")
 RegisterErrorCode(E_WILDCARDS_APPEAR_IN_THE_PATH_ERROR, 17, "Wildcards should not appear in the path")
 RegisterErrorCode(E_NOT_VALID_VIRTUAL_DISK_FILE_ERROR, 18, "Not a virtual disk file")
+RegisterErrorCode(E_INVALID_ADDITIONAL_PARAMETERS_ERROR, 19, "Invalid additional parameters")
 
 
 RegisterErrorCode(E_UNKNOW_MIXTAKE, UINT64_MAX, "unknown mistake")

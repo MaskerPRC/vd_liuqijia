@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<CopyTest>
+    <CopyCommand string="copy stl\1.txt baa">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy 1.txt bas\1.txt">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy 1.txt baa\3.txt">
+        <PreNodes>
+			<Node path="C:\1.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\baa\3.txt"/>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy C:\baa\1* 1* /y">
+        <PreNodes>
+			<Node path="C:\baa\1.txt"/>
+			<Node path="C:\baa\11.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\1.txt"/>
+			<Node path="C:\11.txt"/>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy baa C:\sym\st">
+        <PreNodes>
+			<Node path="C:\baa\1.txt"/>
+			<Node path="C:\baa\11.txt"/>
+			<Node path="C:\baa\2.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\b in\st\1.txt"/>
+			<Node path="C:\b in\st\11.txt"/>
+			<Node path="C:\b in\st\2.txt"/>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy @VirtualDiskTest\UML.pdf C:\">
+        <PreNodes>
+			<Node path="@VirtualDiskTest\UML.pdf"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\UML.pdf"/>
+        </PostNodes>
+    </CopyCommand>
+	<CopyCommand string="copy s.txt z.txt">
+        <PreNodes>
+			<Node path="C:\s.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\z.txt"/>
+        </PostNodes>
+    </CopyCommand>
+</CopyTest>

@@ -22,7 +22,7 @@ public:
 
 	void Exec(const std::string & _cmdLine);
 
-	Comment(for test) FDirectory * GetCurrentDirectory()const { return mCurrentDirectory; }
+	Comment(for test) const FPath & GetCurrentPath()const { return mCurrentPath; }
 
 private:
 #define RegisterFunc(ProcessFunc) uint64_t ProcessFunc(const std::vector<std::string> & _params)
@@ -46,4 +46,5 @@ private:
 	FVirtualDisk * mVirtualDisk;
 	FDirectory * mCurrentDirectory;
 	std::map<std::string, uint64_t(FCommandTool::*)(const std::vector<std::string> &)> mFuncMap;
+	FPath mCurrentPath;
 };

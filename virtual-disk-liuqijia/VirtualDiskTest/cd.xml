@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<CdTest>
+    <CdCommand string="cd stl">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd .">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd baa">
+        <PreNodes>
+            <Node path="C:\baa"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd..">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd sym1">
+        <PreNodes>
+            <Node path="C:\sym1"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd st">
+        <PreNodes>
+            <Node path="C:\sym1\st"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd /">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd C:\sym\st">
+        <PreNodes>
+            <Node path="C:\sym\st"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd \">
+        <PreNodes>
+            <Node path="C:\"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+	<CdCommand string="cd b*">
+        <PreNodes>
+            <Node path="C:\b in"/>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </CdCommand>
+</CdTest>

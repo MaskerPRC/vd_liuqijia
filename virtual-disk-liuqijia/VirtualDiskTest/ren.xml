@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<RenTest>
+    <RenCommand string="ren a.txt 3.txt">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string="ren 1.txt 2.txt">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string="ren 1.txt a.txt">
+        <PreNodes>
+            <Node path="C:\1.txt"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\a.txt"/>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string="ren 1* b.txt">
+        <PreNodes>
+            <Node path="C:\11.txt"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\b.txt"/>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string="ren sym\st sf">
+        <PreNodes>
+            <Node path="C:\b in\st"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\b in\sf"/>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string='ren C:\"b in" bin'>
+        <PreNodes>
+            <Node path="C:\b in"/>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\bin"/>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string='ren C:\sym1\1.txt 2.txt'>
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+        </PostNodes>
+    </RenCommand>
+	<RenCommand string='ren C:\bin\1.txt f.txt'>
+        <PreNodes>
+			<Node path="C:\bin\1.txt"/>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\bin\f.txt"/>
+        </PostNodes>
+    </RenCommand>
+</RenTest>

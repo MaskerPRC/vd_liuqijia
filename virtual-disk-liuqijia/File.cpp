@@ -48,7 +48,7 @@ std::string FPath::ToString(bool _couldWithAt) const
 		returned += '\\';
 	}
 	returned += mPath.back();
-	if (!mIsEndWithSprit)
+	if (mIsEndWithSprit || (IsAbsolutePath() && mPath.size() == 1) )
 		returned += '\\';
 
 	return std::move(returned);

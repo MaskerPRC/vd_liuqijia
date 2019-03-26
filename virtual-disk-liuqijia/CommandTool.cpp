@@ -28,6 +28,8 @@ void FCommandTool::Init(FVirtualDisk * _virtualDisk)
 	mVirtualDisk = _virtualDisk;
 
 	mVirtualDisk->InitCommandTool(this, mCurrentDirectory);
+
+	mCurrentPath = std::string("C:");
 }
 
 void FCommandTool::Clear()
@@ -64,15 +66,22 @@ uint64_t FCommandTool::Dir(const std::vector<std::string> & _params)
 	std::vector<FPath> paths;
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/s")
+		if ((*it)[0] == '/')
 		{
-			with_s = true;
-			continue;
-		}
-		else if (*it == "/ad")
-		{
-			with_ad = true;
-			continue;
+			if (*it == "/s")
+			{
+				with_s = true;
+				continue;
+			}
+			else if (*it == "/ad")
+			{
+				with_ad = true;
+				continue;
+			}
+			else
+			{
+				return E_PARAMETER_ERROR;
+			}
 		}
 
 		paths.push_back(FPath(*it));
@@ -101,9 +110,13 @@ uint64_t FCommandTool::Dir(const std::vector<std::string> & _params)
 
 uint64_t FCommandTool::Md(const std::vector<std::string> & _params)
 {
-	if (_params.size() != 2) return E_PARAMETER_ERROR;
-
-	return mVirtualDisk->Md(mCurrentDirectory, FPath(_params[1]));
+	if (_params.size() < 2) return E_PARAMETER_ERROR;
+	uint64_t errorCode = E_OK;
+	for (uint64_t i = 1; i != _params.size(); ++i)
+	{
+		errorCode = mVirtualDisk->Md(mCurrentDirectory, FPath(_params[i]));
+	}
+	return errorCode;
 }
 
 uint64_t FCommandTool::Cd(const std::vector<std::string> & _params)
@@ -113,15 +126,18 @@ uint64_t FCommandTool::Cd(const std::vector<std::string> & _params)
 	if (_params.size() == 1)
 	{
 		if (_params[0] == "cd.")
-			return mVirtualDisk->Cd(mCurrentDirectory, FPath("."));
+			return mVirtualDisk->Cd(mCurrentDirectory, mCurrentPath, FPath("."));
 		else if (_params[0] == "cd..")
-			return mVirtualDisk->Cd(mCurrentDirectory, FPath(".."));
+			return mVirtualDisk->Cd(mCurrentDirectory, mCurrentPath, FPath(".."));
 		else
 			printf_s(mVirtualDisk->GetFilePath(mCurrentDirectory).ToString().c_str());
 	}
 	else
 	{
-		return mVirtualDisk->Cd(mCurrentDirectory, FPath(_params[1]));
+		if (_params[1] == "/" || _params[1] == "\\")
+			return mVirtualDisk->Cd(mCurrentDirectory, mCurrentPath, FPath("C:"));
+		else
+			return mVirtualDisk->Cd(mCurrentDirectory, mCurrentPath, FPath(_params[1]));
 	}
 
 	return E_OK;
@@ -131,19 +147,20 @@ uint64_t FCommandTool::Copy(const std::vector<std::string> & _params)
 {
 	if (_params.size() < 3) return E_PARAMETER_ERROR;
 	uint64_t pathCount = 0;
-	uint64_t yCount = 0;
 	bool with_y = false;
 	FPath paths[2];
 
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/y")
+		if ((*it)[0] == '/')
 		{
-			if (yCount != 0) return E_PARAMETER_ERROR;
-			with_y = true;
-			yCount++;
+			if (*it == "/y" && !with_y)
+				with_y = true;
+			else
+				return E_PARAMETER_ERROR;
 			continue;
 		}
+
 		if (pathCount != 2)
 		{
 			paths[pathCount] = FPath(*it);
@@ -165,9 +182,12 @@ uint64_t FCommandTool::Del(const std::vector<std::string> & _params)
 	bool with_s = false;
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/s")
+		if ((*it)[0] == '/')
 		{
-			with_s = true;
+			if (*it == "/s")
+				with_s = true;
+			else
+				return E_INVALID_ADDITIONAL_PARAMETERS_ERROR;
 			continue;
 		}
 
@@ -185,9 +205,12 @@ uint64_t FCommandTool::Rd(const std::vector<std::string> & _params)
 	bool with_s = false;
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/s")
+		if ((*it)[0] == '/')
 		{
-			with_s = true;
+			if (*it == "/s")
+				with_s = true;
+			else
+				return E_INVALID_ADDITIONAL_PARAMETERS_ERROR;
 			continue;
 		}
 
@@ -209,19 +232,20 @@ uint64_t FCommandTool::Move(const std::vector<std::string> & _params)
 {
 	if (_params.size() < 3) return E_PARAMETER_ERROR;
 	uint64_t pathCount = 0;
-	uint64_t yCount = 0;
 	bool with_y = false;
 	FPath paths[2];
 
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/y")
+		if ((*it)[0] == '/')
 		{
-			if (yCount != 0) return E_PARAMETER_ERROR;
-			with_y = true;
-			yCount++;
+			if (*it == "/y" && !with_y)
+				with_y = true;
+			else
+				return E_PARAMETER_ERROR;
 			continue;
 		}
+
 		if (pathCount != 2)
 		{
 			paths[pathCount] = FPath(*it);
@@ -246,11 +270,15 @@ uint64_t FCommandTool::Mklink(const std::vector<std::string> & _params)
 
 	for (auto it = _params.begin() + 1; it != _params.end(); ++it)
 	{
-		if (*it == "/d")
+		if ((*it)[0] == '/')
 		{
-			with_d = true;
+			if (*it == "/d")
+				with_d= true;
+			else
+				return E_PARAMETER_ERROR;
 			continue;
 		}
+
 		if (pathCount != 2)
 		{
 			paths[pathCount] = FPath(*it);

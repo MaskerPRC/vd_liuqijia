@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<MdTest>
+    <MdCommand string="md stl">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\stl"/>
+        </PostNodes>
+    </MdCommand>
+	<MdCommand string='md C:\"b in"\sg  baa\sf'>
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\b in\sg"/>
+			<Node path="C:\baa\sf"/>
+        </PostNodes>
+    </MdCommand>
+	<MdCommand string="md x\y\z">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\x"/>
+			<Node path="C:\x\y"/>
+			<Node path="C:\x\y\z"/>
+        </PostNodes>
+    </MdCommand>
+	<MdCommand string="md C:\sym\ab">
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+            <Node path="C:\sym\ab"/>
+			<Node path='C:\b in\ab'/>
+        </PostNodes>
+    </MdCommand>
+	<MdCommand string='md C:\"b in"\ac C:\sy'>
+        <PreNodes>
+        </PreNodes>
+        <PostNodes>
+			<Node path="C:\b in\ac"/>
+			<Node path="C:\sy"/>
+        </PostNodes>
+    </MdCommand>
+</MdTest>

@@ -50,7 +50,7 @@ public:
 		if (mPath.size() == 0) mPath.push_back(".");
 		for (const auto & _ele : mPath)
 		{
-			if (std::find_if(mPath.begin(), mPath.end(), [](char _char) {return _char == '?' || _char == '*'; }) != mPath.end())
+			if (std::find_if(_ele.begin(), _ele.end(), [](char _char) {return _char == '?' || _char == '*'; }) != _ele.end())
 			{
 				mContainsWildcards = true;
 				break;
@@ -196,7 +196,7 @@ public:
 
 	std::vector<FFile *> SearchSubFile(const std::string & _fileName)
 	{
-		std::vector<FFile *>returned;
+		std::vector<FFile *> returned;
 
 		if (_fileName == ".")
 			returned.push_back(this);
@@ -208,7 +208,9 @@ public:
 			if (IsMatch(_ele->GetFileName(), _fileName))
 				returned.push_back(_ele);
 		}
-		return  returned;
+
+		std::sort(returned.begin(), returned.end(), [](FFile * _left, FFile * _right) {return _left->GetFileName() < _right->GetFileName(); });
+		return returned;
 	}
 
 	std::vector<const FFile *> SearchSubFile(const std::string & _fileName)const
@@ -225,6 +227,8 @@ public:
 			if (IsMatch(_ele->GetFileName(), _fileName))
 				returned.push_back(_ele);
 		}
+
+		std::sort(returned.begin(), returned.end(), [](const FFile * _left, const FFile * _right) {return _left->GetFileName() < _right->GetFileName(); });
 		return  returned;
 	}
 

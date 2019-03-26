@@ -32,7 +32,7 @@ class FVirtualDisk
 	void __DirHelper(const FDirectory * _node, bool _s, bool _ad, std::vector<std::string> & _outFileNames, bool _withWildcard, __in_opt const std::string * _wildcard);
 	void __DelHelper(FDirectory * _node, bool _s, bool _withWildcard, __in_opt const std::string * _wildcard);
 	void __RdHelper(FDirectory * _node);
-	void __BuildTopology(FDirectory * _node, uint64_t _parrentIndex, uint64_t & _selfIndex, std::vector<uint64_t>& _treeArray);
+	void __BuildTopology(FDirectory * _node, uint64_t _parrentIndex, std::vector<uint64_t>& _treeArray);
 	void __SaveHelper(FDirectory * _node, std::ofstream & _ofs);
 
 	template<typename _directoryRefType>
@@ -65,10 +65,10 @@ public:
 
 	Comment(for test) std::string getLinkNode(const FPath & _path);
 
-#define RegisterFunc(funcName, ...) uint64_t funcName(FDirectory *& _currentPath, __VA_ARGS__)
+#define RegisterFunc(funcName, ...) uint64_t funcName(FDirectory *& _currentDir, __VA_ARGS__)
 	RegisterFunc(Dir, bool _s, bool _ad, const FPath & _paths, _Out_ std::vector<std::string> & _outFileNames);
 	RegisterFunc(Md, const FPath & _path);
-	RegisterFunc(Cd, const FPath & _path);
+	RegisterFunc(Cd, FPath & _currentPath, const FPath & _path);
 	RegisterFunc(Copy, bool _y, const FPath & _sourcePath, const FPath & _destPath);
 	RegisterFunc(Del, bool _s, const std::vector<FPath> & _paths);
 	RegisterFunc(Rd, bool _s, const std::vector<FPath> & _paths);
@@ -94,8 +94,10 @@ FVirtualDisk::GetFile(_In_opt_ _directoryRefType _directory, const FPath & _path
 	DirectoryRefType nowDirectory = GetFileParentDirectory(_directory, _path);
 
 	if (nowDirectory == nullptr) return std::vector<FileRefType>();
-
-	return nowDirectory->SearchSubFile(_path.GetPath().back());
+	if (_path.GetPath().size() == 1 && _path.IsAbsolutePath())
+		return std::vector<FileRefType>(1, nowDirectory);
+	else
+		return nowDirectory->SearchSubFile(_path.GetPath().back());
 }
 
 template<typename _directoryRefType>
@@ -112,11 +114,11 @@ FVirtualDisk::GetFileParentDirectory(_directoryRefType _directory, const FPath &
 	if (_path.IsAbsolutePath()) nowDirectory = mRoot;
 	Assert(nowDirectory);
 
-	for (uint64_t i = 0; i != _path.GetPath().size() - 1; ++i)
+	for (uint64_t i = _path.IsAbsolutePath() ? 1 : 0; i < _path.GetPath().size() - 1; ++i)
 	{
 		auto files = nowDirectory->SearchSubFile(_path.GetPath()[i]);
 
-		if (files.size() == 0)
+		if (files.size() == 0 || files[0] == nullptr)
 			return nullptr;
 
 		auto it = std::find_if(files.begin(), files.end(), [](FileRefType _file) {return _file->GetFileType() == EFileType::Directory || _file->GetFileType() == EFileType::SymbolLink; });
@@ -124,15 +126,16 @@ FVirtualDisk::GetFileParentDirectory(_directoryRefType _directory, const FPath &
 
 		if ((*it)->GetFileType() == EFileType::SymbolLink)
 		{
-			auto files = GetFile(nullptr, dynamic_cast<SymbolLinkRefType>(*it)->GetLinkedPath());
-			if (files.size() == 0)
-				return nullptr;
-			else if (files[0]->GetFileType() == EFileType::SymbolLink)
+			FileRefType file = GetFinalLinkedFile(dynamic_cast<SymbolLinkRefType>(*it));
+			if (file == nullptr) return nullptr;
+			if (file->GetFileType() == EFileType::Directory)
 			{
-				auto linkedFiles = GetFile(nullptr, dynamic_cast<SymbolLinkRefType>(files[0])->GetLinkedPath());
-				if (linkedFiles.size() == 0 || linkedFiles[0]->GetFileType() != EFileType::Directory)
-					return nullptr;
-				nowDirectory = dynamic_cast<DirectoryRefType>(files[0]);
+				nowDirectory = dynamic_cast<DirectoryRefType>(file);
+				continue;
+			}
+			else
+			{
+				return nullptr;
 			}
 		}
 		else nowDirectory = dynamic_cast<DirectoryRefType>(*it);
@@ -154,7 +157,7 @@ FVirtualDisk::GetFinalLinkedFile(_symbolLinkRefType _symbolLink)
 	auto files = GetFile(nullptr, dynamic_cast<FSymbolLink*>(_symbolLink)->GetLinkedPath());
 
 	FileRefType file = files.size() != 0 ? files[0] : nullptr;
-	
+
 	if (file && file->GetFileType() == EFileType::SymbolLink)
 		file = GetFinalLinkedFile(dynamic_cast<SymbolLinkRefType>(file));
 

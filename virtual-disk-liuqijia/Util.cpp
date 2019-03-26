@@ -47,30 +47,36 @@ std::vector<std::string> SplitCmdLine(std::string _cmdLine)
 
 		auto begin = it;
 
-		if (*begin == L'\"')
+		bool isInDoubleQuotes = false;
+
+		for (NULL; it != _cmdLine.end(); ++it)
 		{
-			for (it = ++begin; it != _cmdLine.end() && *it != L'\"'; ++it);
-			if (begin == it)
-				continue;
-			else
-			{
-				cmdLines.push_back(std::string(begin, it));
-				if (it == _cmdLine.end()) break;
-				if (*it == L'\"') ++it;
-			}
+			if (*it == '\"')
+				isInDoubleQuotes = !isInDoubleQuotes;
+			if (!isInDoubleQuotes && *it == ' ')
+				break;
+
 		}
+		if (begin == it)
+			continue;
 		else
 		{
-			for (NULL; it != _cmdLine.end() && *it != L' '; ++it);
-			if (begin == it)
-				continue;
-			else
-				cmdLines.push_back(std::string(begin, it));
+			std::string str(begin, it);
+			for (auto it = str.begin(); it != str.end(); NULL)
+			{
+				if (*it == '\"')
+					it = str.erase(it);
+				else
+					++it;
+			}
+			cmdLines.push_back(std::move(str));
+			if (it == _cmdLine.end()) break;
+			else ++it;
 		}
 	}
-
 	return std::move(cmdLines);
 }
+
 
 bool CheckFileName(const std::string & _str)
 {

@@ -4,13 +4,16 @@
 
 VirtualDisk::VirtualDisk()
 {
-	FVirtualDisk::Get().Init();
-	FCommandTool::Get().Init(&FVirtualDisk::Get());
+	//FVirtualDisk::Get().Init();
+	//FCommandTool::Get().Init(&FVirtualDisk::Get());
 }
 
 bool VirtualDisk::formatDisk()
 {
-	FVirtualDisk::Get().Format();
+	FCommandTool::Get().Clear();
+	FVirtualDisk::Get().Clear();
+	FVirtualDisk::Get().Init();
+	FCommandTool::Get().Init(&FVirtualDisk::Get());
 	return true;
 }
 
@@ -22,35 +25,57 @@ bool VirtualDisk::executeCmd(const std::string & _cmd)
 
 std::string VirtualDisk::getCurPath()
 {
-	return FVirtualDisk::Get().GetFilePath(FCommandTool::Get().GetCurrentDirectory()).ToString(false);
+	return FCommandTool::Get().GetCurrentPath().ToString(false);
 }
 
 bool VirtualDisk::containNode(std::string _path, int & _size, int & _type)
 {
-	uint64_t size;
-	EFileType type;
-	if (FVirtualDisk::Get().ContainNode(FPath(_path), &size, &type))
+	FPath path(_path);
+
+	if (path.IsAbsolutePath())
 	{
-		_size = size;
-		switch (type)
+		uint64_t size;
+		EFileType type;
+		if (FVirtualDisk::Get().ContainNode(path, &size, &type))
 		{
-		case EFileType::CustomFile:
-			_type = 2;
-			break;
-		case EFileType::Directory:
-			_type = 1;
-			break;
-		case EFileType::SymbolLink:
-			_type = 3;
-			break;
+			_size = size;
+			switch (type)
+			{
+			case EFileType::CustomFile:
+				_type = 2;
+				break;
+			case EFileType::Directory:
+				_type = 1;
+				break;
+			case EFileType::SymbolLink:
+				_type = 3;
+				break;
+			}
+			return true;
 		}
-		return true;
+		else
+		{
+			_size = -1;
+			_type = 0;
+			return false;
+		}
 	}
 	else
 	{
-		_size = -1;
-		_type = 0;
-		return false;
+		FILE * fp = nullptr;
+		fopen_s(&fp, path.ToString(false).c_str(), "rb");
+		if (fp == nullptr)
+		{
+			_size = -1;
+			_type = 0;
+			return false;
+		}
+
+		fseek(fp, 0, SEEK_END);
+		_size = ftell(fp);
+		fclose(fp);
+		_type = 2;
+		return true;
 	}
 }
 
@@ -61,6 +86,6 @@ std::string VirtualDisk::getLinkNode(std::string _path)
 
 VirtualDisk::~VirtualDisk()
 {
-	FCommandTool::Get().Clear();
-	FVirtualDisk::Get().Clear();
+	//FCommandTool::Get().Clear();
+	//FVirtualDisk::Get().Clear();
 }
