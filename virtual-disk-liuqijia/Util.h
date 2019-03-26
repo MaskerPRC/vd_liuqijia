@@ -187,3 +187,5 @@ _drivedClass * Cast(_baseClass * _pointer)
 
 	return reinterpret_cast<_drivedClass *>((uint64_t)(_pointer) - offset);
 }
+
+bool CheckFileName(const std::string & _str);

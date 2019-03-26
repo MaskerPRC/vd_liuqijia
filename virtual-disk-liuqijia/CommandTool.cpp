@@ -176,7 +176,7 @@ uint64_t FCommandTool::Del(const std::vector<std::string> & _params)
 
 	if (paths.size() == 0) return E_PARAMETER_ERROR;
 
-	return mVirtualDisk->Del(mCurrentDirectory, with_s, _params);
+	return mVirtualDisk->Del(mCurrentDirectory, with_s, paths);
 }
 
 uint64_t FCommandTool::Rd(const std::vector<std::string> & _params)
@@ -196,13 +196,13 @@ uint64_t FCommandTool::Rd(const std::vector<std::string> & _params)
 
 	if (paths.size() == 0) return E_PARAMETER_ERROR;
 
-	return mVirtualDisk->Rd(mCurrentDirectory, with_s, _params);
+	return mVirtualDisk->Rd(mCurrentDirectory, with_s, paths);
 }
 
 uint64_t FCommandTool::Ren(const std::vector<std::string> & _params)
 {
 	if (_params.size() != 3) return E_PARAMETER_ERROR;
-	return mVirtualDisk->Ren(mCurrentDirectory, FPath(_params[1]), FPath(_params[2]));
+	return mVirtualDisk->Ren(mCurrentDirectory, FPath(_params[1]), _params[2]);
 }
 
 uint64_t FCommandTool::Move(const std::vector<std::string> & _params)
@@ -291,4 +291,5 @@ uint64_t FCommandTool::Cls(const std::vector<std::string> & _params)
 void FCommandTool::ErrorProcess(uint64_t _errorCode, const std::vector<std::string>& _cmdLines)
 {
 	printf_s(GetDetail(_errorCode));
+	printf_s("\n");
 }

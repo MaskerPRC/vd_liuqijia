@@ -22,6 +22,8 @@ public:
 
 	void Exec(const std::string & _cmdLine);
 
+	Comment(for test) FDirectory * GetCurrentDirectory()const { return mCurrentDirectory; }
+
 private:
 #define RegisterFunc(ProcessFunc) uint64_t ProcessFunc(const std::vector<std::string> & _params)
 	RegisterFunc(Dir);

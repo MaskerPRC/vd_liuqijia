@@ -30,6 +30,9 @@
     <ClInclude Include="ErrorConstant.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="testVirtualDisk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommandTool.cpp">
@@ -50,10 +53,14 @@
     <ClCompile Include="ErrorConstant.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="testVirtualDisk.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ErrorCode.inl">
       <Filter>头文件</Filter>
     </None>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

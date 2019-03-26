@@ -39,6 +39,74 @@ void FVirtualDisk::__DirHelper(const FDirectory * _node, bool _s, bool _ad, std:
 	}
 }
 
+void FVirtualDisk::__DelHelper(FDirectory * _node, bool _s, bool _withWildcard, const std::string * _wildcard)
+{
+	std::vector<std::string> fileNames;
+	for (auto it = _node->GetSubFiles().begin(); it != _node->GetSubFiles().end(); ++it)
+	{
+		switch ((*it)->GetFileType())
+		{
+		case EFileType::CustomFile:
+		case EFileType::SymbolLink:
+			if (!_withWildcard || IsMatch((*it)->GetFileName(), *_wildcard))
+				fileNames.push_back((*it)->GetFileName());
+			break;
+		case EFileType::Directory:
+			if (_s)
+				__DelHelper(dynamic_cast<FDirectory*>(*it), _s, _withWildcard, _wildcard);
+		}
+	}
+
+	for (const auto & _ele : fileNames)
+		_node->EraseSubFile(_ele);
+
+}
+
+void FVirtualDisk::__RdHelper(FDirectory * _node)
+{
+	std::vector<std::string> fileNames;
+	for (auto it = _node->GetSubFiles().begin(); it != _node->GetSubFiles().end(); ++it)
+	{
+		if ((*it)->GetFileType() == EFileType::Directory)
+			__RdHelper(dynamic_cast<FDirectory*>(*it));
+
+		fileNames.push_back((*it)->GetFileName());
+	}
+
+	for (const auto & _ele : fileNames)
+		_node->EraseSubFile(_ele);
+}
+
+void FVirtualDisk::__BuildTopology(FDirectory * _node, uint64_t _parrentIndex, uint64_t & _nowIndex, std::vector<uint64_t>& _treeArray)
+{
+	for (auto _ele : _node->GetSubFiles())
+	{
+		if (_ele->GetFileType() == EFileType::Directory)
+		{
+			_treeArray.push_back(_nowIndex++);
+			__BuildTopology(dynamic_cast<FDirectory*>(_ele), _nowIndex - 1, _nowIndex, _treeArray);
+		}
+		else
+		{
+			_treeArray.push_back(_nowIndex++);
+		}
+	}
+}
+
+void FVirtualDisk::__SaveHelper(FDirectory * _node, std::ofstream & _ofs)
+{
+	EFileType fileType = EFileType::Unknow;
+
+	for (auto _ele : _node->GetSubFiles())
+	{
+		fileType = _ele->GetFileType();
+		_ofs.write(reinterpret_cast<const char *>(&fileType), sizeof(EFileType));
+		_ele->SaveToFile(_ofs);
+		if (_ele->GetFileType() == EFileType::Directory)
+			__SaveHelper(dynamic_cast<FDirectory*>(_ele), _ofs);
+	}
+}
+
 void FVirtualDisk::Init()
 {
 	Format();
@@ -92,6 +160,17 @@ FPath FVirtualDisk::GetFilePath(const FFile * _file)
 	}
 
 	return FPath(path);
+}
+
+std::string FVirtualDisk::getLinkNode(const FPath & _path)
+{
+	auto files = GetFile(nullptr, _path);
+	if (files.size() == 0 || files[0]->GetFileType() != EFileType::SymbolLink)
+		return std::string();
+	FSymbolLink * symbolFile = dynamic_cast<FSymbolLink*>(files[0]);
+	if (ContainNode(symbolFile->GetLinkedPath(), nullptr, nullptr) == false)
+		return std::string();
+	else return symbolFile->GetLinkedPath().ToString(false);
 }
 
 uint64_t FVirtualDisk::Dir(FDirectory *& _currentPath, bool _s, bool _ad, const FPath & _path, _Out_ std::vector<std::string> & _outFileNames)
@@ -282,31 +361,39 @@ uint64_t FVirtualDisk::Copy(FDirectory *& _currentPath, bool _y, const FPath & _
 		if (_destPath.IsContainsWildcards())
 		{
 			destDirectory = GetFileParentDirectory(_currentPath, _destPath);
+			if (destDirectory == nullptr)
+				return E_PATH_ERROR;
 		}
 		else
 		{
-			auto files = GetFile(_currentPath, _destPath);
+			FDirectory * parrentDirectory = GetFileParentDirectory(_currentPath, _destPath);
+			if (parrentDirectory == nullptr) return E_PATH_ERROR;
+			auto files = parrentDirectory->SearchSubFile(_destPath.GetPath().back());
 			if (files.size() == 0)
 			{
-				delete datas[0];
-				return E_PATH_ERROR;
+				FCustomFile * newFile = new FCustomFile(this, parrentDirectory, _destPath.GetPath().back(), FBlob());
+				parrentDirectory->AddSubFile(newFile);
 			}
-			FFile * file = files[0];
-			if (file->GetFileType() == EFileType::SymbolLink)
+			else
 			{
-				file = GetFinalLinkedFile(file);
-			}
+				FFile * file = files[0];
+				if (file->GetFileType() == EFileType::SymbolLink)
+				{
+					file = GetFinalLinkedFile(dynamic_cast<FSymbolLink*>(file));
+					if (file == nullptr) return E_PATH_ERROR;
+				}
 
-			switch (file->GetFileType())
-			{
-			case EFileType::CustomFile:
-				destFile = dynamic_cast<FCustomFile*>(file);
-				break;
-			case EFileType::Directory:
-				destDirectory = dynamic_cast<FDirectory*>(file);
-				break;
-			default:
-				Assert(false);
+				switch (file->GetFileType())
+				{
+				case EFileType::CustomFile:
+					destFile = dynamic_cast<FCustomFile*>(file);
+					break;
+				case EFileType::Directory:
+					destDirectory = dynamic_cast<FDirectory*>(file);
+					break;
+				default:
+					Assert(false);
+				}
 			}
 		}
 
@@ -339,48 +426,320 @@ uint64_t FVirtualDisk::Copy(FDirectory *& _currentPath, bool _y, const FPath & _
 				memcpy(buffer + offset, _ele->GetBufferPointer(), _ele->GetBufferSize());
 				offset += _ele->GetBufferSize();
 			}
+
 		}
 	}
 	else
 	{
-		
+		FILE * fp = nullptr;
+		fopen_s(&fp, _destPath.ToString(false).c_str(), "wb");
+		if (fp == nullptr) return E_PATH_ERROR;
+		for (auto _ele : datas)
+		{
+			fwrite(_ele->GetBufferPointer(), 1, _ele->GetBufferSize(), fp);
+		}
+		fclose(fp);
 	}
 
-
-	return E_PARAMETER_ERROR;
+	return E_OK;
 }
 
-uint64_t FVirtualDisk::Del(FDirectory *& _currentPath, bool _s, const std::vector<std::string> & _paths)
+uint64_t FVirtualDisk::Del(FDirectory *& _currentPath, bool _s, const std::vector<FPath> & _paths)
 {
-	return E_PARAMETER_ERROR;
+	uint64_t returned = E_OK;
+	for (const auto & _path : _paths)
+	{
+		if (_path.IsContainsWildcards())
+		{
+			FDirectory * directory = GetFileParentDirectory(_currentPath, _path);
+			if (directory == nullptr)
+			{
+				returned = E_PATH_ERROR;
+				continue;
+			}
+			__DelHelper(directory, _s, true, &_path.GetPath().back());
+		}
+		else
+		{
+			auto files = GetFile(_currentPath, _path);
+			if (files.size() == 0)
+			{
+				returned = E_PATH_ERROR;
+				continue;
+			}
+
+			FFile * file = files[0];
+
+			if (file->GetFileType() == EFileType::SymbolLink)
+			{
+				FFile * linkedFile = GetFinalLinkedFile(dynamic_cast<FSymbolLink*>(file));
+				file = linkedFile->GetFileType() == EFileType::Directory ? linkedFile : file;
+			}
+
+			switch (file->GetFileType())
+			{
+			case EFileType::CustomFile:
+			{
+				FDirectory * parrentDirectory = file->GetParentDirectory();
+				parrentDirectory->EraseSubFile(file->GetFileName());
+				break;
+			}
+			case EFileType::Directory:
+				__DelHelper(dynamic_cast<FDirectory*>(file), _s, false, nullptr);
+				break;
+			}
+		}
+	}
+	return returned;
 }
 
-uint64_t FVirtualDisk::Rd(FDirectory *& _currentPath, bool _s, const std::vector<std::string> & _paths)
+uint64_t FVirtualDisk::Rd(FDirectory *& _currentPath, bool _s, const std::vector<FPath> & _paths)
 {
-	return E_PARAMETER_ERROR;
+	uint64_t returned = E_OK;
+	for (const auto & _path : _paths)
+	{
+		auto files = GetFile(_currentPath, _path);
+		if (files.size() == 0)
+		{
+			returned = E_PATH_ERROR;
+			continue;
+		}
+		FFile * file = files[0];
+		FDirectory * parrentDirectory = file->GetParentDirectory();
+		switch (file->GetFileType())
+		{
+		case EFileType::CustomFile:
+			returned = E_NOT_DIRECTORY_ERROR;
+			continue;
+		case EFileType::SymbolLink:
+			parrentDirectory->EraseSubFile(file->GetFileName());
+			continue;
+		}
+
+		if (file == mRoot)
+		{
+			returned = E_CANNOT_FIND_SPRCIFIED_FILE_ERROR;
+			continue;
+		}
+
+		if (!_s && dynamic_cast<FDirectory*>(file)->GetSubFiles().size() != 0)
+		{
+			returned = E_FOLDER_IS_NOT_EMPTY_ERROR;
+			continue;
+		}
+
+		__RdHelper(dynamic_cast<FDirectory*>(file));
+		parrentDirectory->EraseSubFile(file->GetFileName());
+	}
+
+	return returned;
 }
 
-uint64_t FVirtualDisk::Ren(FDirectory *& _currentPath, const FPath & _source, const FPath & _dest)
+uint64_t FVirtualDisk::Ren(FDirectory *& _currentPath, const FPath & _source, const std::string & _dest)
 {
-	return E_PARAMETER_ERROR;
+	if (CheckFileName(_dest)) return E_WRONG_FILE_NAME_ERROR;
+	FDirectory * destDirectory = GetFileParentDirectory(_currentPath, _dest);
+	if (destDirectory == nullptr) return E_PATH_ERROR;
+	if (destDirectory->SearchSubFile(_dest).size() != 0)  return E_EXIT_FILE_WITH_SAME_NAME_ERROR;
+
+	auto files = destDirectory->SearchSubFile(_source.GetPath().back());
+	if (files.size() == 0) return E_PATH_ERROR;
+
+	FFile * file = files[0];
+
+	file->ResetFileName(_dest);
+
+	return E_OK;
 }
 
 uint64_t FVirtualDisk::Move(FDirectory *& _currentPath, bool _y, const FPath & _source, const FPath & _dest)
 {
-	return E_PARAMETER_ERROR;
+	uint64_t errorCode = E_OK;
+
+	std::vector<FFile*> toBeMovedFiles;
+	FDirectory * sourceDirectory = nullptr;
+	if (_source.IsContainsWildcards())
+	{
+		sourceDirectory = GetFileParentDirectory(_currentPath, _dest);
+		toBeMovedFiles = sourceDirectory->SearchSubFile(_source.GetPath().back());
+	}
+	else
+	{
+		auto files = GetFile(_currentPath, _source);
+		if (files.size() == 0) return E_PATH_ERROR;
+		toBeMovedFiles.push_back(files[0]);
+		sourceDirectory = files[0]->GetParentDirectory();
+	}
+
+	if (toBeMovedFiles.size() == 0) return E_PATH_ERROR;
+
+	FDirectory * destDirectory = nullptr;
+	std::string destFileName;
+
+	if (_dest.IsContainsWildcards())
+	{
+		destDirectory = GetFileParentDirectory(_currentPath, _dest);
+		if (destDirectory = nullptr) return E_PATH_ERROR;
+	}
+	else
+	{
+		auto files = GetFile(_currentPath, _dest);
+		if (files.size() != 0)
+		{
+			FFile * file = files[0];
+			if (file->GetFileType() == EFileType::SymbolLink)
+			{
+				auto linkedFile = GetFinalLinkedFile(dynamic_cast<FSymbolLink*>(file));
+				if (linkedFile->GetFileType() == EFileType::Directory)
+					destDirectory = dynamic_cast<FDirectory*>(linkedFile);
+				else
+				{
+					destFileName = file->GetFileName();
+					destDirectory = file->GetParentDirectory();
+				}
+			}
+			else if (file->GetFileType() == EFileType::CustomFile)
+			{
+				destFileName = file->GetFileName();
+				destDirectory = file->GetParentDirectory();
+			}
+			else if (file->GetFileType() == EFileType::Directory)
+			{
+				destDirectory = dynamic_cast<FDirectory*>(file);
+			}
+		}
+		else
+		{
+			FDirectory * directory = GetFileParentDirectory(_currentPath, _dest);
+			if (directory == nullptr) return E_PATH_ERROR;
+			destFileName = _dest.GetPath().back();
+			destDirectory = directory;
+		}
+	}
+
+	for (auto _ele : toBeMovedFiles)
+	{
+		auto files = destDirectory->SearchSubFile(_ele->GetFileName());
+		if (files.size() != 0)
+		{
+			FFile * file = files[0];
+			if (file->GetFileType() == EFileType::Directory)
+			{
+				errorCode = E_ACCESS_FAILURE_ERROR;
+				continue;
+			}
+			if (!_y) continue;
+			destDirectory->EraseSubFile(file->GetFileName());
+		}
+
+		std::string * sp = destFileName.size() == 0 ? nullptr : &destFileName;
+
+		FFile * newFile = nullptr;
+		switch (_ele->GetFileType())
+		{
+		case EFileType::CustomFile:
+			newFile = new FCustomFile(this, destDirectory, std::move(*dynamic_cast<FCustomFile*>(_ele)), sp);
+			break;
+		case EFileType::Directory:
+			newFile = new FDirectory(this, destDirectory, std::move(*dynamic_cast<FDirectory*>(_ele)), sp);
+			break;
+		case EFileType::SymbolLink:
+			newFile = new FSymbolLink(this, destDirectory, std::move(*dynamic_cast<FSymbolLink*>(_ele)), sp);
+			break;
+		}
+		_ele->GetParentDirectory()->EraseSubFile(_ele->GetFileName());
+		destDirectory->AddSubFile(newFile);
+	}
+
+	return errorCode;
 }
 
 uint64_t FVirtualDisk::Mklink(FDirectory *& _currentPath, bool _d, const FPath & _source, const FPath & _dest)
 {
-	return E_PARAMETER_ERROR;
+	if (_source.IsContainsWildcards() || _dest.IsContainsWildcards()) return E_WILDCARDS_APPEAR_IN_THE_PATH_ERROR;
+
+	FDirectory * symbolDestDir = GetFileParentDirectory(_currentPath, _source);
+	if (symbolDestDir == nullptr) return E_PATH_ERROR;
+
+	auto files = GetFile(_currentPath, _dest);
+	if (files.size() != 1) return E_CANNOT_FIND_SPRCIFIED_FILE_ERROR;
+
+	FSymbolLink * symbolLinkFile = new FSymbolLink(this, symbolDestDir, _source.GetPath().back(), GetFilePath(files[0]));
+	symbolDestDir->AddSubFile(symbolLinkFile);
+	return E_OK;
 }
 
 uint64_t FVirtualDisk::Save(FDirectory *& _currentPath, const FPath & _dest)
 {
-	return E_PARAMETER_ERROR;
+	std::vector<uint64_t> tree;
+	tree.push_back(UINT64_MAX);
+	uint64_t nowIndex = 1;
+	__BuildTopology(mRoot, 0, nowIndex, tree);
+
+	std::ofstream ofs(_dest.ToString(false), std::ios::out | std::ios::binary);
+	if (ofs.is_open() == false) return E_ACCESS_FAILURE_ERROR;
+
+	uint64_t magicNum = 1014931172;
+	ofs.write(reinterpret_cast<const char*>(&magicNum), sizeof(uint64_t));
+
+	uint64_t fileCount = tree.size();
+	ofs.write(reinterpret_cast<const char *>(&fileCount), sizeof(uint64_t));
+	ofs.write(reinterpret_cast<const char *>(tree.data()), sizeof(uint64_t) * fileCount);
+
+	EFileType fileType = EFileType::Directory;
+	ofs.write(reinterpret_cast<const char *>(fileType), sizeof(EFileType));
+	mRoot->SaveToFile(ofs);
+	__SaveHelper(mRoot, ofs);
+	ofs.close();
+
+	return E_OK;
 }
 
 uint64_t FVirtualDisk::Load(FDirectory *& _currentPath, const FPath & _source)
 {
-	return E_PARAMETER_ERROR;
+	std::vector<uint64_t> tree;
+	std::vector<FFile*> files;
+
+	std::ifstream ifs(_source.ToString(false), std::ios::in | std::ios::binary);
+	if (ifs.is_open() == false) return E_ACCESS_FAILURE_ERROR;
+
+	uint64_t magicNum = 0;
+	ifs.read(reinterpret_cast<char*>(&magicNum), sizeof(uint64_t));
+	if (magicNum != 1014931172) return E_NOT_VALID_VIRTUAL_DISK_FILE_ERROR;
+	uint64_t fileCount = 0;
+	ifs.read(reinterpret_cast<char*>(&fileCount), sizeof(uint64_t));
+	tree.resize(fileCount);
+	ifs.read(reinterpret_cast<char*>(&tree[0]), sizeof(uint64_t) * fileCount);
+	
+	{
+		EFileType fileType = EFileType::Unknow;
+		ifs.read(reinterpret_cast<char *>(&fileType), sizeof(EFileType));
+		Assert(fileType == EFileType::Directory);
+		mRoot = new FDirectory(this, nullptr, std::string());
+		mRoot->LoadFromFile(ifs);
+	}
+
+	files.resize(fileCount, nullptr);
+	files[0] = mRoot;
+
+	for (uint64_t i = 1; i != fileCount; ++i)
+	{
+		EFileType fileType = EFileType::Unknow;
+		ifs.read(reinterpret_cast<char *>(&fileType), sizeof(EFileType));
+		switch (fileType)
+		{
+		case EFileType::CustomFile:
+			files[i] = new FCustomFile(this, dynamic_cast<FDirectory*>(files[tree[i]]), std::string(), FBlob());
+			break;
+		case EFileType::Directory:
+			break;
+		case EFileType::SymbolLink:
+			break;
+		default:
+			Assert(false);
+		}
+		files[i]->LoadFromFile(ifs);
+		dynamic_cast<FDirectory*>(files[tree[i]])->AddSubFile(files[i]);
+	}
+	return E_OK;
 }

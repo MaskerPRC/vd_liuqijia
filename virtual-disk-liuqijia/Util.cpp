@@ -71,3 +71,24 @@ std::vector<std::string> SplitCmdLine(std::string _cmdLine)
 
 	return std::move(cmdLines);
 }
+
+bool CheckFileName(const std::string & _str)
+{
+	for (auto _ele : _str)
+	{
+		switch (_ele)
+		{
+		case '\\':
+		case '/':
+		case ':':
+		case '*':
+		case '?':
+		case '"':
+		case '<':
+		case '>':
+		case '|':
+			return false;
+		}
+	}
+	return true;
+}

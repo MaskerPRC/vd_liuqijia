@@ -22,6 +22,7 @@
     <ClInclude Include="CommandTool.h" />
     <ClInclude Include="ErrorConstant.h" />
     <ClInclude Include="File.h" />
+    <ClInclude Include="testVirtualDisk.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VirtualDisk.h" />
   </ItemGroup>
@@ -30,10 +31,12 @@
     <ClCompile Include="ErrorConstant.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="testVirtualDisk.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="VirtualDisk.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="ErrorCode.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -21,12 +21,27 @@ enum class EFileType
 
 class FPath
 {
-private:
-
-
 public:
 	FPath() { mPath.push_back("."); };
 	FPath(const std::string & _path);
+	FPath(const FPath &) = default;
+	FPath(FPath &&) = default;
+	const FPath& operator= (const FPath & _val)
+	{
+		mContainsWildcards = _val.mContainsWildcards;
+		mIsEndWithSprit = _val.mIsEndWithSprit;
+		mIsInVirtualDisk = _val.mIsInVirtualDisk;
+		mPath = _val.mPath;
+		return *this;
+	}
+	const FPath& operator= (FPath && _val)
+	{
+		mContainsWildcards = _val.mContainsWildcards;
+		mIsEndWithSprit = _val.mIsEndWithSprit;
+		mIsInVirtualDisk = _val.mIsInVirtualDisk;
+		mPath = std::move(_val.mPath);
+		return *this;
+	}
 
 	template<typename _strIteratorType>
 	FPath(bool _isEndWithSprit, bool _isInVirtualDisk, _strIteratorType _begin, _strIteratorType _end)
@@ -86,7 +101,8 @@ public:
 	}
 	~FBlob()
 	{
-		free(mData);
+		if (mData)
+			free(mData);
 		mDataSize = 0;
 	}
 
@@ -94,12 +110,14 @@ public:
 	{
 		this->~FBlob();
 		new(this) FBlob(_right);
+		return *this;
 	}
 
 	const FBlob & operator= (FBlob && _right)
 	{
 		this->~FBlob();
 		new(this) FBlob(_right);
+		return *this;
 	}
 
 	__forceinline void * GetBufferPointer() { return mData; }
@@ -122,10 +140,14 @@ public:
 	virtual ~FFile() = 0 {};
 
 	std::string GetFileName()const { return mFileName; }
+	void ResetFileName(const std::string _fileName) { mFileName = _fileName; }
 	virtual EFileType GetFileType()const = 0;
 	virtual uint64_t GetFileSize()const = 0;
 	const FDirectory * GetParentDirectory()const { return mParentDirectory; }
 	FDirectory * GetParentDirectory() { return mParentDirectory; }
+
+	virtual void SaveToFile(std::ofstream & _ofs)const = 0;
+	virtual void LoadFromFile(std::ifstream & _ifs) = 0;
 
 protected:
 	FDirectory * mParentDirectory = nullptr;
@@ -142,6 +164,7 @@ public:
 		:FFile(_vierualDisk, _parentDirectory, _fileName), mBlob(_blob) {}
 	FCustomFile(FVirtualDisk * _vierualDisk, FDirectory * _parentDirectory, const std::string & _fileName, FBlob && _blob)
 		:FFile(_vierualDisk, _parentDirectory, _fileName), mBlob(_blob) {}
+	FCustomFile(FVirtualDisk * _virtualDisk, FDirectory * _parentDirectory, FCustomFile && _file, _In_opt_  const std::string * _str);
 	~FCustomFile() {}
 
 	uint64_t GetFileSize()const override { return mBlob.GetBufferSize(); };
@@ -152,6 +175,8 @@ public:
 	void ResetBlob(const FBlob & _newBlob) { mBlob = _newBlob; }
 	void ResetBlob(FBlob && _newBlob) { mBlob = _newBlob; }
 
+	void SaveToFile(std::ofstream & _ofs)const override;
+	void LoadFromFile(std::ifstream & _ifs)override;
 private:
 	FBlob mBlob;
 };
@@ -163,6 +188,7 @@ class FDirectory : public FFile
 public:
 	FDirectory(FVirtualDisk * _vierualDisk, FDirectory * _parentDirectory, const std::string & _fileName)
 		:FFile(_vierualDisk, _parentDirectory, _fileName) {}
+	FDirectory(FVirtualDisk * _vierualDisk, FDirectory * _parentDirectory, FDirectory && _directory, _In_opt_  const std::string * _str);
 	~FDirectory() {}
 
 	std::vector<FFile*> & GetSubFiles() { return mSubFiles; }
@@ -213,6 +239,9 @@ public:
 	bool AddSubFile(FFile * _file);
 	bool EraseSubFile(const std::string & _fileName);
 
+	void SaveToFile(std::ofstream & _ofs)const override;
+	void LoadFromFile(std::ifstream & _ifs)override;
+
 private:
 	std::vector<FFile*> mSubFiles;
 };
@@ -225,11 +254,15 @@ public:
 	FSymbolLink(FVirtualDisk * _virtualDisk, FDirectory * _parentDirectory, const std::string & _fileName, const FPath & _linkedPath)
 		:FFile(_virtualDisk, _parentDirectory, _fileName), mLinkedPath(_linkedPath) {}
 	FSymbolLink(FVirtualDisk * _virtualDisk, FDirectory * _parentDirectory, const std::string & _fileName, const FFile * _linkedPath);
+	FSymbolLink(FVirtualDisk * _vierualDisk, FDirectory * _parentDirectory, FSymbolLink && _symbolLink, _In_opt_  const std::string * _str);
 	~FSymbolLink() {}
 
 	const FPath & GetLinkedPath()const { return mLinkedPath; };
 	bool ResetLinkedPath(const FPath & _path);
 	uint64_t GetFileSize()const override { return 0; }
+
+	void SaveToFile(std::ofstream & _ofs)const override;
+	void LoadFromFile(std::ifstream & _ifs)override;
 
 private:
 	FPath mLinkedPath;

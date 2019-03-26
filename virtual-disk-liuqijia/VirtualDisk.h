@@ -30,6 +30,10 @@ class FVirtualDisk
 	FVirtualDisk() = default;
 	void __ClearHelper(FDirectory * _node);
 	void __DirHelper(const FDirectory * _node, bool _s, bool _ad, std::vector<std::string> & _outFileNames, bool _withWildcard, __in_opt const std::string * _wildcard);
+	void __DelHelper(FDirectory * _node, bool _s, bool _withWildcard, __in_opt const std::string * _wildcard);
+	void __RdHelper(FDirectory * _node);
+	void __BuildTopology(FDirectory * _node, uint64_t _parrentIndex, uint64_t & _selfIndex, std::vector<uint64_t>& _treeArray);
+	void __SaveHelper(FDirectory * _node, std::ofstream & _ofs);
 
 	template<typename _directoryRefType>
 	std::vector<typename TSwitchType<TIsConstPointer<_directoryRefType>::value, const FFile*, FFile*>::type>
@@ -59,14 +63,16 @@ public:
 	bool ContainNode(const FPath & _path, _Out_opt_ uint64_t * _size, _Out_opt_ EFileType * _fileType);
 	FPath GetFilePath(const FFile * _file);
 
+	Comment(for test) std::string getLinkNode(const FPath & _path);
+
 #define RegisterFunc(funcName, ...) uint64_t funcName(FDirectory *& _currentPath, __VA_ARGS__)
 	RegisterFunc(Dir, bool _s, bool _ad, const FPath & _paths, _Out_ std::vector<std::string> & _outFileNames);
 	RegisterFunc(Md, const FPath & _path);
 	RegisterFunc(Cd, const FPath & _path);
 	RegisterFunc(Copy, bool _y, const FPath & _sourcePath, const FPath & _destPath);
-	RegisterFunc(Del, bool _s, const std::vector<std::string> & _paths);
-	RegisterFunc(Rd, bool _s, const std::vector<std::string> & _paths);
-	RegisterFunc(Ren, const FPath & _source, const FPath & _dest);
+	RegisterFunc(Del, bool _s, const std::vector<FPath> & _paths);
+	RegisterFunc(Rd, bool _s, const std::vector<FPath> & _paths);
+	RegisterFunc(Ren, const FPath & _source, const std::string & _dest);
 	RegisterFunc(Move, bool _y, const FPath & _source, const FPath & _dest);
 	RegisterFunc(Mklink, bool _d, const FPath & _source, const FPath & _dest);
 	RegisterFunc(Save, const FPath & _dest);
